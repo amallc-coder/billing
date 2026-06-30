@@ -1,0 +1,21 @@
+Claim #,Patient Acct,Payer,Financial Class,Subsidiary,Facility,Provider,DOS,Submit Date,CPT,Service Line,Billed Amount,Allowed Amount,Balance,Denial Code,Remark Code
+CLM-100001,PA-55012,Blue Cross Blue Shield,Commercial,AMMO,North Clinic,Dr. Patel,06/12/2026,06/15/2026,99214,Office Visit,"$320.00","$210.00","$210.00",,
+CLM-100002,PA-55013,Aetna,Commercial,AMAZ,East Surgery,Dr. Nguyen,06/02/2026,06/05/2026,29881,Orthopedics,"$4,800.00","$3,100.00","$3,100.00",CO-97,N19
+CLM-100003,PA-55014,Medicare,Medicare,AMGA,Main Hospital,Dr. Garcia,05/18/2026,05/20/2026,93000,Cardiology,"$180.00","$95.00","$95.00",,
+CLM-100004,PA-55015,UnitedHealthcare,Commercial,AMMO,North Clinic,Dr. Patel,05/05/2026,05/08/2026,70450,Radiology,"$1,250.00","$640.00","$640.00",CO-50,M127
+CLM-100005,PA-55016,Medicaid,Medicaid,AMAZ,East Surgery,Dr. Lee,04/22/2026,04/25/2026,45378,Gastroenterology,"$2,900.00","$1,400.00","$1,400.00",CO-16,MA130
+CLM-100006,PA-55017,Cigna,Commercial,AMGA,Main Hospital,Dr. Garcia,04/10/2026,04/12/2026,99285,Emergency,"$3,600.00","$2,050.00","$2,050.00",CO-197,N130
+CLM-100007,PA-55018,Blue Cross Blue Shield,Commercial,AMMO,South Clinic,Dr. Adams,03/28/2026,03/30/2026,20610,Orthopedics,"$540.00","$300.00","$300.00",,
+CLM-100008,PA-55019,Humana,Commercial,AMAZ,East Surgery,Dr. Nguyen,03/15/2026,03/18/2026,66984,Ophthalmology,"$5,400.00","$3,500.00","$3,500.00",CO-11,N657
+CLM-100009,PA-55020,Medicare,Medicare,AMGA,Main Hospital,Dr. Garcia,03/02/2026,03/04/2026,71046,Radiology,"$210.00","$110.00","$110.00",CO-151,N115
+CLM-100010,PA-55021,Aetna,Commercial,AMMO,North Clinic,Dr. Patel,02/14/2026,02/16/2026,99204,Office Visit,"$410.00","$260.00","$260.00",,
+CLM-100011,PA-55022,UnitedHealthcare,Commercial,AMAZ,East Surgery,Dr. Lee,02/01/2026,02/03/2026,47562,General Surgery,"$8,200.00","$5,100.00","$5,100.00",CO-29,N30
+CLM-100012,PA-55023,Self Pay,Self Pay,AMGA,Main Hospital,Dr. Garcia,01/20/2026,01/22/2026,99213,Office Visit,"$190.00","","$190.00",,
+CLM-100013,PA-55024,Cigna,Commercial,AMMO,South Clinic,Dr. Adams,01/08/2026,01/10/2026,73721,Radiology,"$1,150.00","$590.00","$590.00",CO-45,N370
+CLM-100014,PA-55025,Medicaid,Medicaid,AMAZ,East Surgery,Dr. Nguyen,12/18/2025,12/20/2025,43239,Gastroenterology,"$2,300.00","$1,150.00","$1,150.00",CO-18,N522
+CLM-100015,PA-55026,Blue Cross Blue Shield,Commercial,AMGA,Main Hospital,Dr. Garcia,12/02/2025,12/04/2025,99284,Emergency,"$2,750.00","$1,600.00","$1,600.00",CO-22,N598
+CLM-100016,PA-55027,Humana,Commercial,AMMO,North Clinic,Dr. Patel,11/15/2025,11/17/2025,93306,Cardiology,"$980.00","$520.00","$520.00",CO-109,N418
+CLM-100017,PA-55028,Aetna,Commercial,AMAZ,East Surgery,Dr. Lee,11/01/2025,11/03/2025,49505,General Surgery,"$6,700.00","$4,200.00","$4,200.00",CO-4,N56
+CLM-100018,PA-55029,Medicare,Medicare,AMGA,Main Hospital,Dr. Garcia,10/12/2025,10/14/2025,76700,Radiology,"$340.00","$180.00","$180.00",CO-50,M25
+CLM-100019,PA-55030,UnitedHealthcare,Commercial,AMMO,South Clinic,Dr. Adams,09/20/2025,09/22/2025,27447,Orthopedics,"$14,500.00","$9,800.00","$9,800.00",CO-197,N130
+CLM-100020,PA-55031,Cigna,Commercial,AMAZ,East Surgery,Dr. Nguyen,08/30/2025,09/01/2025,99214,Office Visit,"$320.00","$205.00","$205.00",,
