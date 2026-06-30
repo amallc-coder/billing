@@ -2,6 +2,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { ROLE_BY_VALUE } from '../lib/constants'
 import NotificationsBell from './NotificationsBell'
+import Logo from './ui/Logo'
 
 export default function Layout() {
   const { profile, role, signOut } = useAuth()
@@ -11,8 +12,8 @@ export default function Layout() {
     <div className="app-shell">
       <header className="app-header">
         <div className="app-header-left">
-          <span className="app-logo">AM</span>
-          <span className="app-title">Claims Recovery</span>
+          <Logo size={26} className="app-logo" />
+          <span className="app-title">Clinilytics Billing</span>
         </div>
 
         <nav className="app-nav">

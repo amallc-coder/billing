@@ -160,11 +160,7 @@ code {
   z-index: 40;
 }
 .app-header-left { display: flex; align-items: center; gap: 10px; }
-.app-logo {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px; border-radius: 8px; background: var(--navy);
-  color: #fff; font-weight: 800; font-size: 11px; letter-spacing: 0.02em;
-}
+.app-logo { display: block; flex: none; }
 .app-title { font-weight: 700; font-size: 15px; letter-spacing: -0.02em; }
 .app-nav { display: flex; gap: 2px; }
 .app-nav a {
