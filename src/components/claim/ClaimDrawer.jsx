@@ -28,13 +28,15 @@ import { useProfiles } from '../../hooks/useProfiles'
 import ClaimFields from './ClaimFields'
 import StatusTimeline from './StatusTimeline'
 import CommentThread from './CommentThread'
+import CollectedControl from './CollectedControl'
 
 const CLAIM_COLUMNS = `
   id, source_claim_id, patient_acct, payer_name, payer_type, subsidiary, facility,
   provider, service_date, submit_date, cpt, service_line, billed_amount, expected_amount,
   balance, denial_code, denial_remark, timely_filing_deadline, status, resolution,
   payment_type, assigned_to, next_action, follow_up_date, priority_score, aging_bucket,
-  tier, last_worked_at, created_at, updated_at
+  tier, last_worked_at, created_at, updated_at,
+  collected, collected_amount, collected_at, collected_by
 `
 
 const TONE_COLOR = { bad: 'var(--bad)', warn: 'var(--warn)', muted: 'var(--muted)', good: 'var(--good)' }
@@ -135,6 +137,17 @@ export default function ClaimDrawer({ claimId, onClose, onMutate }) {
     }
   }
 
+  // Callback from CollectedControl after the mark_claim_collected RPC. On
+  // success it hands back the updated row; on failure, just a toast.
+  async function handleCollectedChange(updated, t) {
+    if (updated) {
+      setClaim(updated)
+      await loadHistory()
+      onMutate?.()
+    }
+    if (t) setToast(t)
+  }
+
   const countdown = claim ? filingCountdown(claim.timely_filing_deadline) : null
 
   return (
@@ -154,6 +167,19 @@ export default function ClaimDrawer({ claimId, onClose, onMutate }) {
                 <StatusBadge status={claim.status} />
                 <ResolutionBadge resolution={claim.resolution} />
                 <TierBadge tier={claim.tier} />
+                {claim.collected ? (
+                  <span
+                    className="pill"
+                    style={{
+                      color: 'var(--good)',
+                      borderColor: 'var(--good)',
+                      background: 'rgba(255,255,255,0.9)',
+                    }}
+                    title="Money confirmed in bank"
+                  >
+                    ✓ Collected {money(claim.collected_amount)}
+                  </span>
+                ) : null}
                 {countdown ? (
                   <span
                     className="pill"
@@ -194,6 +220,13 @@ export default function ClaimDrawer({ claimId, onClose, onMutate }) {
               {toast ? (
                 <Toast tone={toast.tone} onClose={() => setToast(null)}>{toast.msg}</Toast>
               ) : null}
+
+              <CollectedControl
+                claim={claim}
+                editable={editable}
+                nameOf={nameOf}
+                onCollectedChange={handleCollectedChange}
+              />
 
               <ClaimFields
                 claim={claim}

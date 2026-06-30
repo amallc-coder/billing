@@ -14,8 +14,9 @@ function Kpi({ accent, label, value, sub }) {
   )
 }
 
-export default function TopLineCards({ summary }) {
+export default function TopLineCards({ summary, collected }) {
   const s = summary
+  const col = collected || { amount: 0, count: 0 }
   return (
     <div className="kpi-grid">
       <Kpi
@@ -23,6 +24,12 @@ export default function TopLineCards({ summary }) {
         label="Total Open AR Uploaded"
         value={moneyShort(s.totalOpen)}
         sub={`pipeline at risk · ${number(s.totalOpenCount)} claims`}
+      />
+      <Kpi
+        accent="good"
+        label="Collected (in bank)"
+        value={moneyShort(col.amount)}
+        sub={`confirmed received — money in the bank · ${number(col.count)} claims`}
       />
       <Kpi
         accent="good"

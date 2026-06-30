@@ -11,6 +11,10 @@
 // Props:
 //   refreshKey (number)            — refetch when it changes
 //   onSelectClaim(claimId)         — optional drill-through (safe to call)
+//   subTab (string)                — which section to render; the parent page
+//                                    owns the sub-tab NAVIGATION, this component
+//                                    just renders the matching section. Unknown
+//                                    / undefined → Overview (default landing).
 // ============================================================================
 import { useEffect, useMemo, useState } from 'react'
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient'
@@ -30,7 +34,7 @@ import DenialBreakdown from './DenialBreakdown'
 import TimelyFilingRisk from './TimelyFilingRisk'
 import BillerProductivity from './BillerProductivity'
 import KpiPanel from './KpiPanel'
-import { distinctValues } from './compute'
+import { distinctValues, collectedSummary } from './compute'
 
 const PAGE = 1000
 
@@ -38,7 +42,7 @@ const CLAIM_COLUMNS =
   'id, source_claim_id, payer_name, payer_type, subsidiary, service_line, cpt, status, ' +
   'resolution, payment_type, balance, billed_amount, expected_amount, denial_code, ' +
   'denial_remark, aging_bucket, tier, assigned_to, service_date, submit_date, ' +
-  'timely_filing_deadline, created_at, updated_at, last_worked_at'
+  'timely_filing_deadline, created_at, updated_at, last_worked_at, collected, collected_amount'
 
 const HISTORY_COLUMNS =
   'claim_id, from_status, to_status, from_resolution, to_resolution, changed_by, changed_at'
@@ -62,7 +66,7 @@ async function fetchAllPaged(table, columns) {
   return all
 }
 
-export default function AnalyticsDashboard({ refreshKey = 0, onSelectClaim }) {
+export default function AnalyticsDashboard({ refreshKey = 0, onSelectClaim, subTab }) {
   const [claims, setClaims] = useState([])
   const [history, setHistory] = useState([])
   const [loading, setLoading] = useState(true)
@@ -120,7 +124,24 @@ export default function AnalyticsDashboard({ refreshKey = 0, onSelectClaim }) {
   // Top-line + per-panel summaries recompute when claims/curve/filters change.
   const summaryAll = useMemo(() => summarize(claims, curve), [claims, curve])
   const summaryFiltered = useMemo(() => summarize(filtered, curve), [filtered, curve])
+  // Collected (in bank) — confirmed cash received, over the full uploaded
+  // universe (matches the top-line cards' scope).
+  const collected = useMemo(() => collectedSummary(claims), [claims])
   const filtersActive = Boolean(fSubsidiary || fPayerType)
+
+  // Normalize the requested sub-tab; unknown/undefined → overview.
+  const SECTION_KEYS = [
+    'dashboard.overview',
+    'dashboard.aging',
+    'dashboard.payers',
+    'dashboard.subsidiary',
+    'dashboard.serviceline',
+    'dashboard.denials',
+    'dashboard.timely',
+    'dashboard.productivity',
+    'dashboard.kpis',
+  ]
+  const section = SECTION_KEYS.includes(subTab) ? subTab : 'dashboard.overview'
 
   // --- States ---------------------------------------------------------------
   if (!isSupabaseConfigured) {
@@ -161,6 +182,83 @@ export default function AnalyticsDashboard({ refreshKey = 0, onSelectClaim }) {
     )
   }
 
+  // Overview is the only section over the FULL uploaded universe; every other
+  // section is driven by the filtered set, so the filter bar rides along with them.
+  const isOverview = section === 'dashboard.overview'
+
+  // The filter bar — shared by all filtered breakdown sections.
+  const filterBar = (
+    <div className="toolbar">
+      <label className="field">
+        <span className="field-label">Subsidiary</span>
+        <select value={fSubsidiary} onChange={(e) => setFSubsidiary(e.target.value)}>
+          <option value="">All</option>
+          {subsidiaries.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="field">
+        <span className="field-label">Payer Type</span>
+        <select value={fPayerType} onChange={(e) => setFPayerType(e.target.value)}>
+          <option value="">All</option>
+          {PAYER_TYPES.map((p) => (
+            <option key={p.value} value={p.value}>
+              {p.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      {filtersActive && (
+        <button
+          className="pill"
+          style={{ cursor: 'pointer', alignSelf: 'flex-end' }}
+          onClick={() => {
+            setFSubsidiary('')
+            setFPayerType('')
+          }}
+        >
+          Clear filters
+        </button>
+      )}
+      {filtersActive && (
+        <span className="muted" style={{ alignSelf: 'flex-end', fontSize: 12 }}>
+          Showing {number(filtered.length)} of {number(claims.length)} claims
+          {fSubsidiary ? ` · ${fSubsidiary}` : ''}
+          {fPayerType ? ` · ${payerTypeLabel(fPayerType)}` : ''}
+        </span>
+      )}
+    </div>
+  )
+
+  // Render the panel(s) for the active section. Overview returns the top-line
+  // cards (full universe); all other sections are driven by the filtered set.
+  function renderSection() {
+    switch (section) {
+      case 'dashboard.aging':
+        return <AgingChart agingByBucket={summaryFiltered.agingByBucket} />
+      case 'dashboard.payers':
+        return <PayerBreakdown claims={filtered} onSelectClaim={onSelectClaim} />
+      case 'dashboard.subsidiary':
+        return <SubsidiaryBreakdown claims={filtered} />
+      case 'dashboard.serviceline':
+        return <ServiceLineBreakdown claims={filtered} />
+      case 'dashboard.denials':
+        return <DenialBreakdown claims={filtered} />
+      case 'dashboard.timely':
+        return <TimelyFilingRisk claims={filtered} />
+      case 'dashboard.productivity':
+        return <BillerProductivity claims={filtered} history={history} nameOf={nameOf} />
+      case 'dashboard.kpis':
+        return <KpiPanel claims={filtered} history={history} summary={summaryFiltered} />
+      case 'dashboard.overview':
+      default:
+        return <TopLineCards summary={summaryAll} collected={collected} />
+    }
+  }
+
   return (
     <div className="page">
       <div className="page-head">
@@ -173,68 +271,10 @@ export default function AnalyticsDashboard({ refreshKey = 0, onSelectClaim }) {
         </div>
       </div>
 
-      {/* Top-line cards reflect the FULL uploaded universe. */}
-      <TopLineCards summary={summaryAll} />
+      {/* Filter bar narrows every breakdown section; Overview is the full universe. */}
+      {!isOverview && filterBar}
 
-      {/* Filter bar — narrows the breakdowns below. */}
-      <div className="toolbar">
-        <label className="field">
-          <span className="field-label">Subsidiary</span>
-          <select value={fSubsidiary} onChange={(e) => setFSubsidiary(e.target.value)}>
-            <option value="">All</option>
-            {subsidiaries.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="field">
-          <span className="field-label">Payer Type</span>
-          <select value={fPayerType} onChange={(e) => setFPayerType(e.target.value)}>
-            <option value="">All</option>
-            {PAYER_TYPES.map((p) => (
-              <option key={p.value} value={p.value}>
-                {p.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        {filtersActive && (
-          <button
-            className="pill"
-            style={{ cursor: 'pointer', alignSelf: 'flex-end' }}
-            onClick={() => {
-              setFSubsidiary('')
-              setFPayerType('')
-            }}
-          >
-            Clear filters
-          </button>
-        )}
-        {filtersActive && (
-          <span className="muted" style={{ alignSelf: 'flex-end', fontSize: 12 }}>
-            Showing {number(filtered.length)} of {number(claims.length)} claims
-            {fSubsidiary ? ` · ${fSubsidiary}` : ''}
-            {fPayerType ? ` · ${payerTypeLabel(fPayerType)}` : ''}
-          </span>
-        )}
-      </div>
-
-      {/* Breakdowns — driven by the filtered set. */}
-      <div className="section-grid">
-        <AgingChart agingByBucket={summaryFiltered.agingByBucket} />
-        <PayerBreakdown claims={filtered} onSelectClaim={onSelectClaim} />
-        <SubsidiaryBreakdown claims={filtered} />
-        <ServiceLineBreakdown claims={filtered} />
-        <DenialBreakdown claims={filtered} />
-        <TimelyFilingRisk claims={filtered} />
-      </div>
-
-      <div className="section-grid">
-        <KpiPanel claims={filtered} history={history} summary={summaryFiltered} />
-        <BillerProductivity claims={filtered} history={history} nameOf={nameOf} />
-      </div>
+      <div className="section-grid">{renderSection()}</div>
     </div>
   )
 }
