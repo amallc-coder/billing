@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient'
 import { Button, Card, Field, Toast } from '../components/ui/Primitives'
-import { BRAND } from '../lib/constants'
+import Logo from '../components/ui/Logo'
 
 export default function Login() {
   const [mode, setMode] = useState('signin') // signin | signup
@@ -42,9 +42,11 @@ export default function Login() {
     <div className="auth-screen">
       <Card className="auth-card">
         <div className="auth-brand">
-          <span className="auth-logo" style={{ background: BRAND.navy }}>AM</span>
+          <span className="auth-logo" style={{ background: 'var(--clay-bg)' }}>
+            <Logo size={30} />
+          </span>
           <div>
-            <h1>Claims Recovery</h1>
+            <h1>Clinilytics Billing</h1>
             <p className="muted">Work unpaid claims. Recover pipeline revenue.</p>
           </div>
         </div>

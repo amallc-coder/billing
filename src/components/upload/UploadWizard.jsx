@@ -9,7 +9,7 @@ import { useAuth } from '../../context/AuthContext'
 import { BRAND } from '../../lib/constants'
 import { Button, Card, EmptyState, Spinner, Toast } from '../../components/ui/Primitives'
 import { parseFile, isSupportedFile } from './parse'
-import { autoMatch, applyMapping, REQUIRED_FIELDS } from './mapping'
+import { autoMatch, applyMapping, requiredSatisfied, defaultCalc } from './mapping'
 import ColumnMapper from './ColumnMapper'
 import ValidationPreview from './ValidationPreview'
 import CommitStep from './CommitStep'
@@ -92,14 +92,15 @@ export default function UploadWizard({ onCommitted }) {
   const [headers, setHeaders] = useState([])
   const [rows, setRows] = useState([])
   const [mapping, setMapping] = useState({})
+  const [calc, setCalc] = useState(defaultCalc())
 
-  // Recompute normalized rows + stats whenever mapping or rows change.
+  // Recompute normalized rows + stats whenever mapping, calc, or rows change.
   const result = useMemo(() => {
     if (!rows.length) return null
-    return applyMapping(rows, mapping)
-  }, [rows, mapping])
+    return applyMapping(rows, mapping, calc)
+  }, [rows, mapping, calc])
 
-  const mappedRequired = REQUIRED_FIELDS.every((k) => mapping[k])
+  const mappedRequired = requiredSatisfied(mapping, calc)
 
   const resetAll = () => {
     setStepIndex(0)
@@ -107,6 +108,7 @@ export default function UploadWizard({ onCommitted }) {
     setHeaders([])
     setRows([])
     setMapping({})
+    setCalc(defaultCalc())
     setError(null)
     setBusy(false)
   }
@@ -131,6 +133,7 @@ export default function UploadWizard({ onCommitted }) {
       setHeaders(parsed.headers)
       setRows(parsed.rows)
       setMapping(autoMatch(parsed.headers))
+      setCalc(defaultCalc())
       setStepIndex(1)
     } catch (err) {
       setError(err?.message || 'Could not read that file.')
@@ -246,6 +249,8 @@ export default function UploadWizard({ onCommitted }) {
               headers={headers}
               mapping={mapping}
               onChange={setMapping}
+              calc={calc}
+              onCalcChange={setCalc}
               filename={filename}
             />
             <div className="divider" />
@@ -275,6 +280,7 @@ export default function UploadWizard({ onCommitted }) {
             <CommitStep
               filename={filename}
               mapping={mapping}
+              calc={calc}
               result={result}
               user={user}
               canEdit={canEdit}

@@ -30,6 +30,35 @@ export const TARGET_FIELDS = [
 
 export const REQUIRED_FIELDS = TARGET_FIELDS.filter((f) => f.required).map((f) => f.key)
 
+// ----------------------------------------------------------------------------
+// Calc config — lets the user CHOOSE how `balance` and `timely_filing_deadline`
+// are determined, separate from the plain target->source `mapping`.
+//   calc.balance = { mode: 'column' | 'calc', base, subtract: [] }
+//   calc.timely_filing_deadline = { mode: 'column' | 'calc' | 'auto', base, days }
+// Defaults keep current behavior: mode 'column' = use the mapped column as-is.
+// ----------------------------------------------------------------------------
+export function defaultCalc() {
+  return {
+    balance: { mode: 'column', base: '', subtract: [] },
+    timely_filing_deadline: { mode: 'column', base: 'submit_date', days: 180 },
+  }
+}
+
+// Whether all required target fields are satisfied given the current mapping +
+// calc. `balance` is satisfied by a mapped column OR a valid calc base; every
+// other required field still just needs a mapped source column.
+export function requiredSatisfied(mapping, calc) {
+  const c = calc || defaultCalc()
+  return REQUIRED_FIELDS.every((key) => {
+    if (key === 'balance') {
+      const b = c.balance || { mode: 'column' }
+      if (b.mode === 'calc') return !!b.base
+      return !!mapping[key]
+    }
+    return !!mapping[key]
+  })
+}
+
 // Loose alias lists used for auto-matching source headers to target fields.
 const ALIASES = {
   source_claim_id: ['claim', 'claim #', 'claim number', 'claimid', 'claim id', 'claimno'],
@@ -188,6 +217,25 @@ export function normalizeDate(value) {
   return ''
 }
 
+// Add `n` whole days to a 'YYYY-MM-DD' string, returning 'YYYY-MM-DD'. Uses UTC
+// math to avoid timezone/DST drift. Returns '' if the input isn't a valid date.
+export function addDays(ymdStr, n) {
+  if (ymdStr == null) return ''
+  const s = String(ymdStr).trim()
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (!m) return ''
+  const y = Number(m[1])
+  const mo = Number(m[2])
+  const d = Number(m[3])
+  if (mo < 1 || mo > 12 || d < 1 || d > 31) return ''
+  const base = Date.UTC(y, mo - 1, d)
+  if (Number.isNaN(base)) return ''
+  const days = Number(n)
+  const shifted = new Date(base + (Number.isFinite(days) ? days : 0) * MS_PER_DAY)
+  if (Number.isNaN(shifted.getTime())) return ''
+  return ymd(shifted.getUTCFullYear(), shifted.getUTCMonth() + 1, shifted.getUTCDate())
+}
+
 // Map a free-text payer/financial-class value to the payer_type enum.
 const PAYER_TYPE_HINTS = [
   { type: 'medicare', re: /\bmedicare\b|\bmcr\b|\bmcare\b/ },
@@ -227,10 +275,16 @@ function normalizeByKind(kind, value) {
   }
 }
 
-// Apply mapping to source rows. Returns:
-//   { rows, committable, skipped, totalBalance, totalBilled, distinctPayers }
+// Apply mapping (+ optional calc config) to source rows. Returns:
+//   { rows, total, committable, skipped, totalBalance, totalBilled, distinctPayers }
 //   each item in rows: { values:{...normalized}, missing:[requiredKeys], ok:bool }
-export function applyMapping(sourceRows, mapping) {
+// `calc` (defaults to defaultCalc()) lets `balance` and `timely_filing_deadline`
+// be computed instead of mapped directly. See defaultCalc() for its shape.
+export function applyMapping(sourceRows, mapping, calc) {
+  const cfg = calc || defaultCalc()
+  const balanceCfg = cfg.balance || { mode: 'column' }
+  const tflCfg = cfg.timely_filing_deadline || { mode: 'column' }
+
   const out = []
   let committable = 0
   let totalBalance = 0
@@ -243,6 +297,35 @@ export function applyMapping(sourceRows, mapping) {
       const sourceHeader = mapping[field.key]
       const raw = sourceHeader ? src[sourceHeader] : ''
       values[field.key] = normalizeByKind(field.kind, raw)
+    }
+
+    // --- Open Balance: optionally compute base − (term1 + term2 + …) ---------
+    if (balanceCfg.mode === 'calc') {
+      const baseStr = balanceCfg.base ? normalizeMoney(src[balanceCfg.base]) : ''
+      const baseNum = Number(baseStr)
+      if (!balanceCfg.base || baseStr === '' || !Number.isFinite(baseNum)) {
+        values.balance = ''
+      } else {
+        let result = baseNum
+        for (const h of balanceCfg.subtract || []) {
+          if (!h) continue
+          const termStr = normalizeMoney(src[h])
+          const termNum = Number(termStr)
+          if (termStr !== '' && Number.isFinite(termNum)) result -= termNum
+        }
+        values.balance = Number.isFinite(result) ? String(result) : ''
+      }
+    }
+
+    // --- Timely Filing Deadline: optionally compute <base date> + N days -----
+    if (tflCfg.mode === 'calc') {
+      const baseDate = values[tflCfg.base] || ''
+      values.timely_filing_deadline = baseDate
+        ? addDays(baseDate, Number(tflCfg.days) || 0)
+        : ''
+    } else if (tflCfg.mode === 'auto') {
+      // DB computes the deadline from per-payer filing rules.
+      values.timely_filing_deadline = ''
     }
 
     const missing = REQUIRED_FIELDS.filter((k) => !values[k] || values[k] === '')

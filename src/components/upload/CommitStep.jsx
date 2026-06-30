@@ -12,6 +12,7 @@ import { toCommitRow } from './mapping'
 export default function CommitStep({
   filename,
   mapping,
+  calc,
   result,
   user,
   canEdit,
@@ -40,7 +41,7 @@ export default function CommitStep({
           filename,
           uploaded_by: user?.id ?? null,
           row_count: committableRows.length,
-          column_mapping: mapping,
+          column_mapping: { columns: mapping, calc },
         })
         .select('id')
         .single()

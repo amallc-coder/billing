@@ -1,29 +1,36 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { BRAND, ROLE_BY_VALUE } from '../lib/constants'
+import { ROLE_BY_VALUE } from '../lib/constants'
 import NotificationsBell from './NotificationsBell'
+import Logo from './ui/Logo'
 
 export default function Layout() {
   const { profile, role, signOut } = useAuth()
+  const name = profile?.full_name ?? profile?.email ?? 'User'
 
   return (
     <div className="app-shell">
-      <header className="app-header" style={{ background: BRAND.navy }}>
+      <header className="app-header">
         <div className="app-header-left">
-          <span className="app-logo" style={{ color: BRAND.navy }}>AM</span>
-          <span className="app-title">Claims Recovery</span>
+          <Logo size={26} className="app-logo" />
+          <span className="app-title">Clinilytics Billing</span>
         </div>
 
         <nav className="app-nav">
           <NavLink to="/claims-recovery" className={({ isActive }) => (isActive ? 'active' : '')}>
+            <span className="cat-dot" />
             Dashboard
           </NavLink>
         </nav>
 
         <div className="app-header-right">
+          <span className="synced">
+            <span className="dot" />
+            Live
+          </span>
           <NotificationsBell />
           <div className="user-chip">
-            <span className="user-name">{profile?.full_name ?? profile?.email ?? 'User'}</span>
+            <span className="user-name">{name}</span>
             <span className="user-role">{ROLE_BY_VALUE[role]?.label ?? role ?? '—'}</span>
           </div>
           <button className="btn btn-ghost btn-sm" onClick={signOut}>

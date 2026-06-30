@@ -10,7 +10,7 @@ export function useProfiles() {
     let active = true
     supabase
       .from('profiles')
-      .select('id, email, full_name, role')
+      .select('id, email, full_name, role, allowed_tabs')
       .order('full_name', { ascending: true })
       .then(({ data }) => {
         if (!active) return

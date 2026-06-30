@@ -293,6 +293,21 @@ export function billerProductivity(claims = [], history = []) {
     .sort((a, b) => b.recovered - a.recovered || b.statusChanges - a.statusChanges)
 }
 
+// --- Collected (in bank) -----------------------------------------------------
+// "Collected" = cash actually confirmed received, flagged on the claim via the
+// `collected` boolean + `collected_amount` numeric. This is the realest figure
+// (money in the bank), distinct from Recovered (payer-issued). Simple filter+sum.
+export function collectedSummary(claims = []) {
+  let amount = 0
+  let count = 0
+  for (const c of claims) {
+    if (!c.collected) continue
+    amount += num(c.collected_amount)
+    count += 1
+  }
+  return { amount, count }
+}
+
 // Distinct values of a field across claims (for filter dropdowns), sorted.
 export function distinctValues(claims = [], field) {
   const set = new Set()

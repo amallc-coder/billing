@@ -4,22 +4,26 @@
 // ============================================================================
 
 // Brand palette
+// Warm, editorial "paper" palette: cream background, white cards, near-black
+// primary/active, muted category accents, semantic up/down deltas.
 export const BRAND = {
-  navy: '#002855',
-  navyLight: '#1b3a63',
-  cyan: '#29ABE2',
-  cyanLight: '#e6f6fd',
-  ink: '#0f1b2d',
-  slate: '#5b6b82',
-  line: '#e3e8ef',
-  bg: '#f5f7fa',
+  navy: '#1c1a14', // primary dark — buttons, active pills, header text
+  navyLight: '#39362c',
+  cyan: '#3f7cae', // calm accent — links, info, "pending biller"
+  cyanLight: '#eef3f8',
+  clay: '#bd6a3a', // warm highlight accent
+  clayBg: '#f6ece2',
+  ink: '#1c1b16',
+  slate: '#6f6b60',
+  line: '#e7e3d8',
+  bg: '#f2f0ea',
   surface: '#ffffff',
   good: '#1f9d6b',
-  goodBg: '#e6f6ef',
-  warn: '#c8821a',
-  warnBg: '#fdf3e3',
-  bad: '#c0392b',
-  badBg: '#fbeae8',
+  goodBg: '#e7f5ee',
+  warn: '#bd7a1f',
+  warnBg: '#f7efdd',
+  bad: '#c8453b',
+  badBg: '#f9e9e6',
 }
 
 // --- Primary status (drives the worklist) -----------------------------------
