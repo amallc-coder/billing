@@ -1,0 +1,67 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - claude/new-page-creation-7ejexm
+      - main
+  workflow_dispatch:
+
+# Allow the workflow to publish to GitHub Pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One concurrent Pages deployment; don't cancel an in-progress publish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  # Project Pages site is served from /billing/.
+  VITE_BASE: /billing/
+  # Supabase connection. The publishable (anon) key is browser-safe by design
+  # and is protected by Row Level Security, so it lives in the client bundle.
+  VITE_SUPABASE_URL: https://hynoggphywmespnsvhro.supabase.co
+  VITE_SUPABASE_ANON_KEY: sb_publishable_ssVhLL2pzlZI_eTrIGsIBA_2midRYQ_
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure Pages
+        # enablement: true turns Pages on automatically if the repo allows it.
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+
+      # SPA fallback: GitHub Pages has no rewrite rules, so deep links like
+      # /billing/claims-recovery would 404. Serving index.html for unknown
+      # paths lets the client router resolve them.
+      - run: cp dist/index.html dist/404.html
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
