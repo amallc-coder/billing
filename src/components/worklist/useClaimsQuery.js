@@ -7,6 +7,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient'
 
 export const PAGE_SIZE = 50
+export const PAGE_SIZE_OPTIONS = [50, 100, 500, 1000]
 
 // Columns we read back for the worklist rows. Kept lean — the drawer fetches
 // the full row when a claim is opened.
@@ -62,7 +63,8 @@ function applyFilters(query, filters) {
   return query
 }
 
-export function useClaimsQuery({ filters, sort, page, refreshKey }) {
+export function useClaimsQuery({ filters, sort, page, pageSize = PAGE_SIZE, refreshKey }) {
+  const size = pageSize > 0 ? pageSize : PAGE_SIZE
   const [rows, setRows] = useState([])
   const [count, setCount] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -87,8 +89,8 @@ export function useClaimsQuery({ filters, sort, page, refreshKey }) {
     setLoading(true)
     setError(null)
 
-    const from = page * PAGE_SIZE
-    const to = from + PAGE_SIZE - 1
+    const from = page * size
+    const to = from + size - 1
 
     let query = supabase.from('claims').select(COLUMNS, { count: 'exact' })
     query = applyFilters(query, filters)
@@ -114,9 +116,9 @@ export function useClaimsQuery({ filters, sort, page, refreshKey }) {
       active = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, sort, page, refreshKey, nonce])
+  }, [filters, sort, page, size, refreshKey, nonce])
 
   const refetch = useCallback(() => setNonce((n) => n + 1), [])
 
-  return { rows, count, loading, error, refetch, pageSize: PAGE_SIZE }
+  return { rows, count, loading, error, refetch, pageSize: size }
 }

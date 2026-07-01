@@ -16,7 +16,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useProfiles } from '../../hooks/useProfiles'
 import { number } from '../../lib/format'
 import { Button, Card, Spinner, EmptyState, Toast } from '../../components/ui/Primitives'
-import { useClaimsQuery } from './useClaimsQuery'
+import { useClaimsQuery, PAGE_SIZE_OPTIONS } from './useClaimsQuery'
 import WorklistFilters from './WorklistFilters'
 import WorklistTable from './WorklistTable'
 import BulkActionBar from './BulkActionBar'
@@ -50,6 +50,7 @@ export default function Worklist({ refreshKey, onSelectClaim, onMutate }) {
   // null sort => use the default multi-key sort in the query hook.
   const [sort, setSort] = useState({ col: null, ascending: true })
   const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState(50)
 
   const [selected, setSelected] = useState(() => new Set())
   const [bulkBusy, setBulkBusy] = useState(false)
@@ -73,12 +74,18 @@ export default function Worklist({ refreshKey, onSelectClaim, onMutate }) {
   const filtersKey = JSON.stringify(queryFilters)
   const stableFilters = useMemo(() => queryFilters, [filtersKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const { rows, count, loading, error, refetch, pageSize } = useClaimsQuery({
+  const { rows, count, loading, error, refetch } = useClaimsQuery({
     filters: stableFilters,
     sort,
     page,
+    pageSize,
     refreshKey,
   })
+
+  // Reset to the first page when the page size changes.
+  useEffect(() => {
+    setPage(0)
+  }, [pageSize])
 
   // Reset to page 0 whenever filters or sort change (avoid landing past the end).
   const prevDeps = useRef({ filtersKey, sort })
@@ -271,10 +278,26 @@ export default function Worklist({ refreshKey, onSelectClaim, onMutate }) {
             />
 
             {/* Pagination controls */}
-            <div className="spread" style={{ marginTop: 12 }}>
-              <span className="muted" style={{ fontSize: 12 }}>
-                Page {page + 1} of {totalPages} · {number(count)} total
-              </span>
+            <div className="spread" style={{ marginTop: 12, flexWrap: 'wrap', gap: 10 }}>
+              <div className="row" style={{ gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+                <span className="muted" style={{ fontSize: 12 }}>
+                  Page {page + 1} of {totalPages} · {number(count)} total
+                </span>
+                <label className="row" style={{ gap: 6, alignItems: 'center', fontSize: 12 }}>
+                  <span className="muted">Rows per page</span>
+                  <select
+                    value={pageSize}
+                    onChange={(e) => setPageSize(Number(e.target.value))}
+                    style={{ width: 'auto', padding: '4px 8px' }}
+                  >
+                    {PAGE_SIZE_OPTIONS.map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
               <div className="row gap-sm" style={{ gap: 8 }}>
                 <Button
                   variant="secondary"
