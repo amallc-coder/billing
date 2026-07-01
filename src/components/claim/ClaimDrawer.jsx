@@ -106,9 +106,9 @@ export default function ClaimDrawer({ claimId, onClose, onMutate }) {
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  // Whether the current user may actually edit this claim.
-  const editable =
-    canEdit && (isAdmin || (isBiller && claim?.assigned_to === user?.id))
+  // Whether the current user may actually edit this claim. Billers work the
+  // shared worklist, so any admin or biller can edit; viewers are read-only.
+  const editable = canEdit
 
   async function handleSave(patch, note) {
     if (!editable) return
